@@ -6,7 +6,12 @@
         <script src="./mips.js" type="text/javascript"></script>
     </head>
     <body onload="init()">
-        <button></button>
+        <div id="topBar" style="height:50px; float: top;">
+            <input id="type" type="range" min="0" max="1">
+            <input id="guid" type="text">
+            <button onclick="createModule()">Create Module</button>
+            <button onclick="calcRoute()">Ping</button>
+        </div>
         <canvas id="canvas" width="1500" height="500" style="border:1px solid #000000;"></canvas>
     </body>
 </html>

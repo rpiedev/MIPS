@@ -1,30 +1,5 @@
-const realRoute = {
-    host: {
-        guid: "7C",
-        type: 0,
-        sub: [
-            {
-                guid: "A2",
-                type: 1,
-                sub: [
-                    {
-                        guid: "G9",
-                        type: 1,
-                        sub: []
-                    },
-                    {
-                        guid: "KB",
-                        type: 1,
-                        sub: []
-                    }
-                ]
-            }
-        ]
-    }
-};
-
 const modDict = {
-    0: { name: "Host", out: 1, size_x: 30, size_y: 30, color: "#343434" },
+    0: { name: "Host", out: 1, size_x: 30, size_y: 30, color: "#fcba03" },
     1: { name: "example", out: 2, size_x: 30, size_y: 30, color: "#9d9d9d" }
 }
 
@@ -59,27 +34,25 @@ class Module {
             mod.inputMod = this;
         } 
     }
-    HandlePacket(name, dir, dataString) {
+    HandlePacket(name, dataString) {
         // pretend this is like an actual packet being sent and the handler finding it naturally and not just
         // me calling the handler directly this wouldnt really happen
-        if (name == "HOST") {
-            dataString += this.guid;
-        }
-        switch (dir) {
-            case 0: // send packet to input
-                if (!this.input) {
+        switch (name) {
+            case "MOD": // send packet to input
+                if (!this.inputMod) {
                     console.log(dataString);
-                    break;
+                    return;
                 }
-                this.inputMod.HandlePacket(name, dir, dataString);
-                break;    
-            case 1: // send packet to all outputs
+                this.inputMod.HandlePacket(name, dataString);
+                break;
+            case "HOST": // send packet to all outputs
+                dataString += ":"+this.guid;
                 if (this.outputMods.length == 0) {
-                    this.HandlePacket("MOD", 0, dataString);
+                    this.HandlePacket("MOD", dataString);
                     break;
                 }
                 this.outputMods.forEach(outputMod => {
-                    outputMod.HandlePacket(name, dir, dataString);
+                    outputMod.HandlePacket(name, dataString);
                 })
                 break;
         }
@@ -89,6 +62,7 @@ class Module {
 //* ================================================
 
 var calculatedRoute = { host: {} };
+var host;
 
 function init() {
     canvas = document.getElementById("canvas");
@@ -101,14 +75,15 @@ function init() {
     canvas.onmousedown = mdown;
     canvas.onmouseup = mup;
     canvas.onmousemove = mmove;
+    canvas.oncontextmenu = (e) => e.preventDefault();
 
-    var host = navTree(realRoute.host);
-    
-    console.log(host)
+    host = createModule("7C", 0);
 
-    host.HandlePacket("HOST", 1, "");
-
-    //draw();
+    draw();
+}
+function calcRoute() {
+    console.log(host);
+    host.HandlePacket("HOST", "");
 }
 function navTree(mod) {
     let thisMod = new Module(mod.guid, mod.type);
@@ -126,6 +101,8 @@ var BB;
 var offsetX;
 var offsetY;
 var things = [];
+var connections = [];
+var memory = [];
 var WIDTH = 1500;
 var HEIGHT = 500;
 
@@ -133,11 +110,32 @@ var dragok = false;
 var startX;
 var startY;
 
+function createModule(guid = document.getElementById("guid").value, modId = document.getElementById("type").value) {
+    if (memory.includes(guid)) {
+        console.error("Module with GUID " + guid + " already exists!");
+        return;
+    }
+    let randx = 100+Math.floor(Math.random() * 100 - 50);
+    let randy = 100 + Math.floor(Math.random() * 100 - 50);
+    let dict = modDict[modId];
+    var newMod = new Module(guid, modId);
+    memory.push(guid);
+    things.push({ x: randx, y: randy, fill: dict.color, width: dict.size_x, height: dict.size_y, isDragging: false, mod: newMod });
+    draw();
+    return newMod;
+}
+
 function rect(x, y, w, h) {
     ctx.beginPath();
     ctx.rect(x, y, w, h);
     ctx.closePath();
     ctx.fill();
+}
+function line(x1, y1, x2, y2) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
 }
 function draw() {
     clear();
@@ -145,6 +143,15 @@ function draw() {
         ctx.fillStyle = thing.fill;
         rect(thing.x, thing.y, thing.width, thing.height);
     });
+    connections.forEach(conn => {
+        ctx.fillStyle = "#000000";
+        if (conn.isDragging) {
+            line(conn.start.x+conn.start.width/2, conn.start.y+conn.start.height/2, conn.end.x, conn.end.y);
+        } else {
+            line(conn.start.x+conn.start.width/2, conn.start.y+conn.start.height/2, conn.end.x+conn.start.width/2, conn.end.y+conn.start.height/2);
+        }
+        
+    })
 }
 function clear() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
@@ -160,18 +167,37 @@ function mdown(e) {
     var mx = parseInt(e.clientX - offsetX);
     var my = parseInt(e.clientY - offsetY);
 
-    dragok = false;
-    for (let i = 0; i < things.length; i++) {
-        let thing = things[i];
-        if (mx > thing.x && mx < thing.x + thing.width && my > thing.y && my < thing.y + thing.height) {
-            dragok = true;
-            thing.isDragging = true;
-            break;
+    if (e.buttons == 1) {
+        dragok = false;
+        for (let i = 0; i < things.length; i++) {
+            let thing = things[i];
+            if (mx > thing.x && mx < thing.x + thing.width && my > thing.y && my < thing.y + thing.height) {
+                dragok = true;
+                thing.isDragging = true;
+                break;
+            }
         }
-    }
 
-    startX = mx;
-    startY = my;
+        startX = mx;
+        startY = my;
+    } else if (e.buttons == 2) {
+        dragok = false;
+        for (let i = 0; i < things.length; i++) {
+            let thing = things[i];
+            if (mx > thing.x && mx < thing.x + thing.width && my > thing.y && my < thing.y + thing.height) {
+                if (thing.mod.outputMods.length >= modDict[thing.mod.modId].out) {
+                    console.error("Module " + thing.mod.guid + " has reached maximum outputs");
+                    return;
+                }
+                dragok = true;
+                connections.push({ start: thing, end: {x:thing.x,y:thing.y}, isDragging: true });
+                break;
+            }
+        }
+
+        startX = mx;
+        startY = my;
+    }
 }
    
 function mup(e){
@@ -179,10 +205,44 @@ function mup(e){
     e.preventDefault();
     e.stopPropagation();
 
+    var mx = parseInt(e.clientX - offsetX);
+    var my = parseInt(e.clientY - offsetY);
+
+    var has = true;
     dragok = false;
     things.forEach(thing => {
         thing.isDragging = false;
+        if (mx > thing.x && mx < thing.x + thing.width && my > thing.y && my < thing.y + thing.height) {
+            has = false;
+            connections.forEach(conn => {
+                if (conn.isDragging) {
+                    if (thing.mod.modName == "Host") {
+                        console.error("Cannot connect to input of Host");
+                        has = true;
+                        return;
+                    } else if (conn.start.mod.guid == thing.mod.guid) {
+                        console.error("Cannot connect to self");
+                        has = true;
+                        return;
+                    }
+                    conn.end = thing;
+                    conn.start.mod.Add(thing.mod);
+                }
+            });
+        } 
     });
+    if (has) {
+        connections.forEach(conn => {
+            if (conn.isDragging) {
+                connections.splice(connections.indexOf(conn), 1);
+            }
+        });
+    }
+    connections.forEach(conn => {
+        conn.isDragging = false;
+    });
+    
+    draw();
 }
 
 function mmove(e) {
@@ -197,15 +257,30 @@ function mmove(e) {
     var dx = mx - startX;
     var dy = my - startY;
 
-    things.forEach(thing => {
-        if (thing.isDragging) {
-            thing.x += dx;
-            thing.y += dy;
-        }
-    });
+    if (e.buttons == 1) {
+        things.forEach(thing => {
+            if (thing.isDragging) {
+                thing.x += dx;
+                thing.y += dy;
+            }
+        });
+    
+        draw();
+    
+        startX = mx;
+        startY = my;   
+    } else if (e.buttons == 2) {
+        
+        connections.forEach(conn => {
+            if (conn.isDragging) {
+                conn.end.x = mx;
+                conn.end.y = my;
+            }
+        });
+        
+        draw();
 
-    draw();
-
-    startX = mx;
-    startY = my;
+        startX = mx;
+        startY = my; 
+    }
 }

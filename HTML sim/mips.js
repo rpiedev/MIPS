@@ -1,3 +1,4 @@
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const modDict = {
     0: { name: "Host", out: 1, size_x: 30, size_y: 30, color: "#fcba03" },
     1: { name: "example", out: 2, size_x: 30, size_y: 30, color: "#9d9d9d" }
@@ -77,7 +78,9 @@ function init() {
     canvas.onmousemove = mmove;
     canvas.oncontextmenu = (e) => e.preventDefault();
 
-    host = createModule("7C", 0);
+    host = createModule("C7", 0);
+
+    genGuid();
 
     draw();
 }
@@ -91,6 +94,11 @@ function navTree(mod) {
         thisMod.Add(navTree(subMod));
     });
     return thisMod;
+}
+function genGuid() {
+    let randLetter = letters[Math.floor(Math.random() * 26)];
+    let randNumber = Math.floor(Math.random() * 10);
+    document.getElementById("guid").value = randLetter + randNumber;
 }
 
 // * ================================ CANVAS STUFF
@@ -122,6 +130,7 @@ function createModule(guid = document.getElementById("guid").value, modId = docu
     memory.push(guid);
     things.push({ x: randx, y: randy, fill: dict.color, width: dict.size_x, height: dict.size_y, isDragging: false, mod: newMod });
     draw();
+    genGuid();
     return newMod;
 }
 
@@ -142,6 +151,9 @@ function draw() {
     things.forEach(thing => {
         ctx.fillStyle = thing.fill;
         rect(thing.x, thing.y, thing.width, thing.height);
+        ctx.font = "20px serif";
+        ctx.fillStyle = "#000";
+        ctx.fillText(thing.mod.guid, thing.x, thing.y+thing.height-8);
     });
     connections.forEach(conn => {
         ctx.fillStyle = "#000000";
@@ -172,6 +184,14 @@ function mdown(e) {
         for (let i = 0; i < things.length; i++) {
             let thing = things[i];
             if (mx > thing.x && mx < thing.x + thing.width && my > thing.y && my < thing.y + thing.height) {
+                if (e.altKey) { 
+                    if (thing.mod.modName == "Host") {
+                        console.error("Cannot remove Host");
+                        return;
+                    }
+                    things.splice(things.indexOf(thing), 1);
+                    return;
+                } 
                 dragok = true;
                 thing.isDragging = true;
                 break;
@@ -222,6 +242,10 @@ function mup(e){
                         return;
                     } else if (conn.start.mod.guid == thing.mod.guid) {
                         console.error("Cannot connect to self");
+                        has = true;
+                        return;
+                    } else if (thing.mod.inputMod) {
+                        console.error("Cannot connect more than one module to input");
                         has = true;
                         return;
                     }

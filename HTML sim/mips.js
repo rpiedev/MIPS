@@ -56,6 +56,15 @@ class Module {
                     outputMod.HandlePacket(name, dataString);
                 })
                 break;
+            case "ACT":
+                if (dataString == this.guid) {
+                    console.log("Activated module " + this.guid);
+                    break;
+                } 
+                this.outputMods.forEach(outputMod => {
+                    outputMod.HandlePacket(name, dataString);
+                })
+                break;
         }
     }
 }
@@ -98,7 +107,10 @@ function navTree(mod) {
 function genGuid() {
     let randLetter = letters[Math.floor(Math.random() * 26)];
     let randNumber = Math.floor(Math.random() * 10);
-    document.getElementById("guid").value = randLetter + randNumber;
+    return randLetter + randNumber;
+}
+function sendActivate(guid = document.getElementById("guid").value) {
+    host.HandlePacket("ACT", guid);
 }
 
 // * ================================ CANVAS STUFF
@@ -118,7 +130,7 @@ var dragok = false;
 var startX;
 var startY;
 
-function createModule(guid = document.getElementById("guid").value, modId = document.getElementById("type").value) {
+function createModule(guid = genGuid(), modId = document.getElementById("type").value) {
     if (memory.includes(guid)) {
         console.error("Module with GUID " + guid + " already exists!");
         return;
@@ -130,7 +142,6 @@ function createModule(guid = document.getElementById("guid").value, modId = docu
     memory.push(guid);
     things.push({ x: randx, y: randy, fill: dict.color, width: dict.size_x, height: dict.size_y, isDragging: false, mod: newMod });
     draw();
-    genGuid();
     return newMod;
 }
 

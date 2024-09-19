@@ -1,24 +1,15 @@
-#include <SoftwareSerial.h>
-
-//ATTINY85 settings
-const int ITX = 20;
-const int IRX = 21;
-const int OTX = 22;
-const int ORX = 23;
-
-SoftwareSerial input = SoftwareSerial(IRX, ITX);
-SoftwareSerial output = SoftwareSerial(ORX, OTX);
-
 void setup() {
-  input.begin(9600);
-  output.begin(9600);
+  // put your setup code here, to run once:
+  Serial1.begin(9600);
   Serial.begin(9600);
-  char h = '0';
-
-  delay(1000);
-  int sent = output.write('N');
 }
 
 void loop() {
+  // put your main code here, to run repeatedly:
   
+  if(Serial1.available()) {
+    //char thing = Serial1.read();
+    Serial.println(Serial1.read());
+  }
+  delay(10);
 }

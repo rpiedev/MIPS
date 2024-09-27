@@ -1,25 +1,15 @@
-#include <SoftwareSerial.h>
-
-//Arduino Nano Every settings
-const int ITX = 9;
-const int IRX = 10;
-const int OTX = 11;
-const int ORX = 12;
-
-SoftwareSerial input = SoftwareSerial(IRX, ITX);
-SoftwareSerial output = SoftwareSerial(ORX, OTX);
+int i = 0;
+uint8_t x = 0;
 
 void setup() {
-  input.begin(9600);
-  //output.begin(9600);
+  // put your setup code here, to run once:
+  Serial1.begin(9600);
   Serial.begin(9600);
 }
 
 void loop() {
-  input.listen();
-  if(input.available()) {
-    Serial.println(input.read());
-  }
-  
-  delay(100);
+  // put your main code here, to run repeatedly:
+  Serial1.write('c');
+
+  delay(35);
 }

@@ -1,4 +1,11 @@
-#include <SoftwareSerial.h>
+
+int main() {
+  char *buffer = (char *)malloc(sizeof(char)*32);
+  
+}
+
+
+/*#include <SoftwareSerial.h>
 
 //ATTINY85 settings
 const int ITX = 3;
@@ -24,30 +31,18 @@ void setup() {
 
 void loop() {
   input.listen();
-  if(input.available()) {
-    char thng = input.read();
-    output.write(thng);
-  }
-  delay(10);
-  /*
-  if(input.available()) {
-    while(bufferFull == 0) { 
+  if(input.available() > 0) {
+    while(bufferFull == 0) {
       currentChar = input.read();
-      if(currentChar = 4) { // End of Transmission
-        bufferFull = 1;
-        packetBufferCurrent = 0;
-        packetBufferSize = packetBufferCurrent;
-        continue;
-      }
       packetBuffer[packetBufferCurrent] = currentChar;
       packetBufferCurrent++;
-      if(packetBufferCurrent == 32) {
+      packetBufferSize++;
+      if(packetBufferSize >= 32 || currentChar == 4) {
         bufferFull = 1;
         packetBufferCurrent = 0;
       }
     }
   }
-  
   while(bufferFull == 1) { 
     currentChar = packetBuffer[packetBufferCurrent];
     output.write(currentChar);
@@ -55,13 +50,32 @@ void loop() {
     if(packetBufferCurrent == packetBufferSize) { // End of Transmission
       bufferFull = 0;
       packetBufferCurrent = 0;
+      packetBufferSize = 0;
     }
   }
-  delay(1000);
-  packetBuffer[0] = 'c';
-  packetBuffer[1] = 'a';
-  packetBuffer[2] = 'r';
-  bufferFull = 1;
-  packetBufferSize = 3;
-  */
-}
+  /*
+  output.listen();
+  delay(5);
+  if(output.available()> 0) {
+    while(bufferFull == 0) {
+      currentChar = output.read();
+      packetBuffer[packetBufferCurrent] = currentChar;
+      packetBufferCurrent++;
+      packetBufferSize++;
+      if(packetBufferSize >= 32 || currentChar == 4) {
+        bufferFull = 1;
+        packetBufferCurrent = 0;
+      }
+    }
+  }
+  while(bufferFull == 1) { 
+    currentChar = packetBuffer[packetBufferCurrent];
+    input.write(currentChar);
+    packetBufferCurrent++;
+    if(packetBufferCurrent == packetBufferSize) { // End of Transmission
+      bufferFull = 0;
+      packetBufferCurrent = 0;
+      packetBufferSize = 0;
+    }
+  }*/
+}*/

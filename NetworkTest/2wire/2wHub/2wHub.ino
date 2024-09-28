@@ -1,5 +1,8 @@
 #include <Wire.h>
 
+const uint8_t defaultAddress = 1;
+uint16_t timer = 0;
+
 uint8_t code = 0;
 uint8_t address = 0;
 uint8_t attempts = 0;
@@ -12,6 +15,12 @@ void setup() {
 }
 
 void loop() {
+  if (timer >= 1000) {
+    checkforDefaults();
+  } else {
+    timer++;
+  }
+
   while(Serial.available()) {
     String p = Serial.readString();
     if(p == "on\n") {
@@ -26,11 +35,14 @@ void loop() {
   }
 }
 
+void checkForDefaults() {
+  requestFrom(defaultAddress, 6);
+};
+
 void requestBegin() {
   Wire.beginTransmission(address);
   Wire.write(code);
   Wire.endTransmission();
-  Wire.requestFrom(address, numR);
   waitForAck();
 }
 

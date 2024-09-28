@@ -30,10 +30,8 @@ void requestEvent() {
 
 void turnOFF() {
   digitalWrite(3, LOW);
-  Wire.write("01234567890123456789012345678901");
 }
 
 void turnON() {
   digitalWrite(3, HIGH);
-  Wire.write("on                              ");
 }

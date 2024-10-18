@@ -19,7 +19,7 @@ void setup() {
 }
 
 void loop() {
-  if(!flag && digitalRead(22) == 1) {
+  if(digitalRead(22) == 1) {
     Serial3.write(7);
     Serial3.write(0x25);
     Serial3.write(0);
@@ -27,8 +27,7 @@ void loop() {
     Serial3.write(0);
     Serial3.write(0x3);
     Serial3.write(0x1);
-    flag = 1;
-  } else if(flag && digitalRead(21) == 1) {
+  } else if(digitalRead(21) == 1) {
     Serial3.write(7);
     Serial3.write(0x25);
     Serial3.write(0);
@@ -36,7 +35,6 @@ void loop() {
     Serial3.write(0);
     Serial3.write(0x3);
     Serial3.write(0x2);
-    flag = 0;
   }
   if(Serial3.available() > 1) {
     int rec = Serial3.read();

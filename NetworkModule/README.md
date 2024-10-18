@@ -18,11 +18,18 @@ All packets are at least 2 Bytes
 
 1 byte - Type of Packet
 
-HUB - 2 Bytes
+HUB 0x9 - 2 Bytes
 
 Comes from the hub, a general minimal informational request for the MOD packet, probably intermittent
 
-MOD - 10 Bytes
+MOD 0x18 - 10 Bytes
 
 Comes from the modules, has all the info about them
 
+ACT 0x25 - 6 + info
+
+Contains information for the modules at given address
+
+3. Mod types
+
+1 - LED

@@ -2,17 +2,18 @@
 #define BAUD 38400
 #define UBRRval 12
 
-#define bufferSize 128
+#define bufferSize 256
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-const unsigned char mod[] = {0xa,0x18,0x0,0x0,0x0,0x1,0x0,0x1,0x0,0x1};
+const unsigned char mod[] = {0xa,0x18,0x0,0x0,0x0,0x3,0x0,0x1,0x0,0x1};
 
 unsigned char buffer[bufferSize];
 uint8_t bufferReadIndex = 0;
 uint8_t bufferWriteIndex = 0;
+uint8_t workingLen = 0;
 
 //* LED
 void setupLED() {
@@ -56,15 +57,11 @@ void USART0_Transmit (unsigned char in) {
 static inline unsigned char read() {
     uint8_t oldIndex = bufferReadIndex;
     bufferReadIndex+=1;
-    if(bufferReadIndex >= bufferSize)
-        bufferReadIndex = 0;
     return buffer[oldIndex];
 }
 static inline void write(unsigned char in) {
     buffer[bufferWriteIndex] = in;
     bufferWriteIndex+=1;
-    if(bufferWriteIndex >= bufferSize)
-        bufferWriteIndex = 0;
 }
 static inline void recHub() {
     for(uint8_t i=0;i<10;i++) {
@@ -80,11 +77,32 @@ static inline void recMod() {
         USART1_Transmit(read());
     }
 }
+static inline void recAct(unsigned char len) {
+    _Bool forThis = 1;
+    for(uint8_t i=0;i<4;i++) {
+        if(buffer[bufferReadIndex+i] != mod[i+2])
+            forThis = 0;
+    }
+
+    if(!forThis) {
+        USART0_Transmit(len);
+        USART0_Transmit(0x25);
+        for(uint8_t i=0;i<len-2;i++) {
+            USART0_Transmit(read());
+        }
+    } else {
+        bufferReadIndex+=4;
+        if(read() == 0x1)
+            LEDon();
+        else
+            LEDoff();
+    }
+}
 
 void checkBuffer() {
-    if(bufferReadIndex == bufferWriteIndex) return;
-    LEDoff();
-    if(bufferWriteIndex - bufferReadIndex != buffer[bufferReadIndex]) return;
+    uint8_t diff = bufferWriteIndex >= bufferReadIndex ? bufferWriteIndex - bufferReadIndex : bufferWriteIndex + (bufferSize - bufferReadIndex);
+    if(bufferReadIndex == bufferWriteIndex) return; // maybe enable sleep mode?
+    if(diff < buffer[bufferReadIndex]) return;
     unsigned char packetLen = read();
     unsigned char packetType = read();
     switch (packetType) {
@@ -93,6 +111,10 @@ void checkBuffer() {
             break;
         case 0x18:
             recMod();
+            break;
+        case 0x25:
+            recAct(packetLen);
+            break;
     }
 
 }

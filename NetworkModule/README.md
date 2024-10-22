@@ -33,3 +33,5 @@ Contains information for the modules at given address
 3. Mod types
 
 1 - LED
+
+3 - SERVO

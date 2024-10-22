@@ -25,16 +25,16 @@ void loop() {
     Serial3.write(0);
     Serial3.write(0);
     Serial3.write(0);
-    Serial3.write(0x3);
-    Serial3.write(0x1);
+    Serial3.write(0x2);
+    Serial3.write(90);
   } else if(digitalRead(21) == 1) {
     Serial3.write(7);
     Serial3.write(0x25);
     Serial3.write(0);
     Serial3.write(0);
     Serial3.write(0);
-    Serial3.write(0x3);
     Serial3.write(0x2);
+    Serial3.write(120);
   }
   if(Serial3.available() > 1) {
     int rec = Serial3.read();

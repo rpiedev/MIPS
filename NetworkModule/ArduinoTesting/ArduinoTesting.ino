@@ -52,6 +52,7 @@ void sendACT(uint32_t address, String comm) {
         Serial3.write(1);
       else
         Serial3.write(2);
+      break;
     case 3:
       Serial3.write(ang[0]);
       break;

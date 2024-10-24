@@ -102,6 +102,10 @@ static inline void recAct(unsigned char len) {
 void checkBuffer() {
     uint8_t diff = bufferWriteIndex >= bufferReadIndex ? bufferWriteIndex - bufferReadIndex : bufferWriteIndex + (bufferSize - bufferReadIndex);
     if(bufferReadIndex == bufferWriteIndex) return; // maybe enable sleep mode?
+    if(buffer[bufferReadIndex] < 2) {
+        bufferReadIndex+=1;
+        return;
+    }
     if(diff < buffer[bufferReadIndex]) return;
     unsigned char packetLen = read();
     unsigned char packetType = read();

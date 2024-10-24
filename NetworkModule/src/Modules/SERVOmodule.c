@@ -24,7 +24,7 @@ void setupSERVO() {
     TCCR1A = (1 << COM1B1) | (1 << WGM11); // sets pin OC1B low on match - ICR1 is top
     TCCR1B = (1 << CS11) |(1 << WGM12) | (1 << WGM13); // 8x prescaler - ICR1 is top
     ICR1 = 20000; // freq = 8000000 / (20000 * 8 [prescale]) = 50 HZ or 20ms cycle
-    OCR1B = 500; // ( 1500 / 20000 ) * 20ms = ~1.5ms 
+    OCR1B = 1500; // ( 1500 / 20000 ) * 20ms = ~1.5ms 
     // 2500 one side - 1500 middle  - 500 other side
 
 
@@ -33,7 +33,9 @@ void setupSERVO() {
     TOCPMCOE=0b01000000; // enable tocc6
 }
 void SERVOto(uint8_t angle) {
-    OCR1B = 500 + (int)(11.1 * angle) % 2000;
+    if(angle > 180) 
+        angle = 180;
+    OCR1B = 500 + (int)(11.11 * angle);
 }
 
 //* Hardware USART

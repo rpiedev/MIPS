@@ -1,51 +1,74 @@
 int flag = 1;
 int packetLen = 0;
 
-unsigned char buffer[10];
-int bufferIndex = 0;
-int bufferFull = 0;
-
 struct Module {
   uint32_t address;
   uint16_t type;
   uint16_t version;
 };
+Module mod1 = {1,1,1};
+Module mod2 = {2,3,1};
+Module mod3 = {3,1,1};
+
+String in;
+
+unsigned char command[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+int commandLen = 0;
+
+Module modules[10];
+uint8_t modulesLen;
 
 void setup() {
   pinMode(22, INPUT);
   pinMode(21, INPUT);
   Serial.begin(38400);
   Serial3.begin(38400, SERIAL_8N2);
+
+  modules[0] = mod1;
+  modules[1] = mod3;
+  modules[2] = mod2;
+  modulesLen = 3;
+}
+
+void sendACT(uint32_t address, String comm) {
+  uint8_t *b = (uint8_t *)&address;
+  Serial3.write(7);
+  Serial3.write(0x25);
+  Serial3.write(b[3]);
+  Serial3.write(b[2]);
+  Serial3.write(b[1]);
+  Serial3.write(b[0]);
+  int type = 0;
+  int num = comm.toInt();
+  uint8_t *ang = (uint8_t *)&num;
+  for(int i=0;i<modulesLen;i++) {
+    if(modules[i].address == address) 
+      type = modules[i].type;
+  }
+  
+  switch(type) {
+    case 1:
+      if(comm == "on") 
+        Serial3.write(1);
+      else
+        Serial3.write(2);
+    case 3:
+      Serial3.write(ang[0]);
+      break;
+    default:
+      break;
+  }
 }
 
 void loop() {
-  if(digitalRead(22) == 1) {
-    Serial3.write(7);
-    Serial3.write(0x25);
-    Serial3.write(0);
-    Serial3.write(0);
-    Serial3.write(0);
-    Serial3.write(0x2);
-    Serial3.write(90);
-  } else if(digitalRead(21) == 1) {
-    Serial3.write(7);
-    Serial3.write(0x25);
-    Serial3.write(0);
-    Serial3.write(0);
-    Serial3.write(0);
-    Serial3.write(0x2);
-    Serial3.write(120);
-  }
   if(Serial3.available() > 1) {
     int rec = Serial3.read();
-    if(packetLen == 0) 
-      packetLen = rec;
-      Serial.println(rec);
-    buffer[bufferIndex++] = rec;
-    if(bufferIndex == packetLen) {
-      bufferFull = 1;
-      bufferIndex = 0;
-    }
+    Serial.println(rec);
   }
-  
+  if(Serial.available() > 1) {
+    in = Serial.readString();
+    in = in.substring(0, in.length()-1);
+    int spacePos = in.indexOf(' ');
+    sendACT(in.substring(0,spacePos).toInt(), in.substring(spacePos+1,in.length()));
+  }
 }

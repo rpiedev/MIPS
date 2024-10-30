@@ -15,3 +15,10 @@ servo:
 	avr-objcopy -j .text -j .data -O ihex build/SERVOmodule.elf build/SERVOmodule.hex
 #	upload
 	avrdude -c avrisp -p t841 -P COM5 -U flash:w:build/SERVOmodule.hex
+
+claw:
+# 	build
+	avr-gcc -mmcu=attiny841 -Wall -Os -o build/CLAWmodule.elf src/Modules/CLAWmodule.c
+	avr-objcopy -j .text -j .data -O ihex build/CLAWmodule.elf build/CLAWmodule.hex
+#	upload
+	avrdude -c avrisp -p t841 -P COM5 -U flash:w:build/CLAWmodule.hex

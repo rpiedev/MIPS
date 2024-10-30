@@ -10,7 +10,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 //                           LEN MOD- -=====ID======- -TYPE=- VERSION
-const unsigned char mod[] = {0xa,0x18,0x0,0x0,0x0,0x3,0x0,0x3,0x0,0x1};
+const unsigned char mod[] = {0xa,0x18,0x0,0x0,0x0,0x2,0x0,0x2,0x0,0x1};
 
 unsigned char buffer[bufferSize];
 uint8_t bufferReadIndex = 0;
@@ -43,6 +43,8 @@ void setupSERVO() {
     TIMSK1 = (1<<TOIE1);
 }
 void SERVOto(uint8_t angle) {
+    if(angle < 90)
+        angle = 90;
     if(angle > 180) 
         angle = 180;
     goalAng = 500 + (int)(11.11 * angle);
@@ -54,8 +56,8 @@ void SERVOup() {
         goalAng += 10;
 }
 void SERVOdown() {
-    if(goalAng <= 510) 
-        goalAng = 500;
+    if(goalAng <= 1510) 
+        goalAng = 1500;
     else
         goalAng -= 10;
 }

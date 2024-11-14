@@ -49,17 +49,19 @@ void SERVOto(uint8_t angle) {
         angle = 180;
     goalAng = 500 + (int)(11.11 * angle);
 }
-void SERVOup() {
-    if(goalAng >= 2490) 
+void SERVOup(uint8_t scale) {
+    int interval = (scale+1) * 10;
+    if(goalAng >= 2500 - interval) 
         goalAng = 2500;
     else
-        goalAng += 10;
+        goalAng += interval;
 }
-void SERVOdown() {
-    if(goalAng <= 1510) 
+void SERVOdown(uint8_t scale) {
+    int interval = (scale+1) * 10;
+    if(goalAng <= 1500+interval) 
         goalAng = 1500;
     else
-        goalAng -= 10;
+        goalAng -= interval;
 }
 void SERVOupd() {
     if(workingAng == goalAng) return;
@@ -141,18 +143,12 @@ static inline void recAct(unsigned char len) {
         }
     } else {
         bufferReadIndex+=4; //address
-        switch(buffer[bufferReadIndex]) {
-            case 240:
-                SERVOdown();
-                bufferReadIndex++;
-                break;
-            case 250:
-                SERVOup();
-                bufferReadIndex++;
-                break;
-            default:
-                SERVOto(read());
-        }
+        if(buffer[bufferReadIndex] >= 230 && buffer[bufferReadIndex] < 240) {
+            SERVOdown(read()-230);
+        } else if(buffer[bufferReadIndex] >= 240 && buffer[bufferReadIndex] < 250) {
+            SERVOup(read()-240);
+        } else
+            SERVOto(read());
     }
 }
 

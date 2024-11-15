@@ -94,6 +94,8 @@ void USART_Init () {
     // Set frame data 8data, 2stop
     UCSR1C = (1<<USBS1) | (3<<UCSZ10);
     UCSR0C = (1<<USBS0) | (3<<UCSZ00);
+    // Enable internal pullup resistors
+    PUEA = (1<<PUEA1) | (1<<PUEA2) | (1<<PUEA4) | (1<<PUEA5);
 }
 void USART1_Transmit (unsigned char in) {
     while (!(UCSR1A & (1<<UDRE1)));

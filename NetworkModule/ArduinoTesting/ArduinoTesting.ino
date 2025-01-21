@@ -15,9 +15,9 @@ struct Module {
   uint16_t version;
 };
 
-Module mod1 = {1,3,1};
-Module mod2 = {2,2,1};
-Module mod3 = {3,3,1};
+Module mod1 = {7,3,1};
+Module mod2 = {6,3,1};
+Module mod3 = {5,3,1};
 
 Module modules[10];
 uint8_t modulesLen;
@@ -110,22 +110,28 @@ void loop() {
   if (IrReceiver.decode() && IrReceiver.decodedIRData.protocol != UNKNOWN) {
     switch(IrReceiver.decodedIRData.command) {
       case 0x5E:
-        sendACT(2, 245);
+        //sendACT(2, 245);
+        sendACT(5, 245);
         break;
       case 0x5A:
-        sendACT(2, 235);
+        //sendACT(2, 235);
+        sendACT(5, 235);
         break;
       case 0xC:
-        sendACT(1, 245);
+        //sendACT(1, 245);
+        sendACT(6, 245);
         break;
       case 0x8:
-        sendACT(1, 235);
+        //sendACT(1, 235);
+        sendACT(6, 235);
         break;
       case 0x52:
-        sendACT(3, 245);
+        //sendACT(3, 245);
+        sendACT(7, 245);
         break;
       case 0x4A:
-        sendACT(3, 235);
+        //sendACT(3, 235);
+        sendACT(7, 235);
         break;
     }
   }

@@ -10,7 +10,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 //                           LEN MOD- -=====ID======- -TYPE=- VERSION
-const unsigned char mod[] = {0xa,0x18,0x0,0x0,0x0,0x3,0x0,0x3,0x0,0x1};
+const unsigned char mod[] = {0xa,0x18,0x0,0x0,0x0,0x6,0x0,0x3,0x0,0x1};
 
 unsigned char buffer[bufferSize];
 uint8_t bufferReadIndex = 0;
@@ -47,17 +47,19 @@ void SERVOto(uint8_t angle) {
         angle = 180;
     goalAng = 500 + (int)(11.11 * angle);
 }
-void SERVOup() {
-    if(goalAng >= 2490) 
+void SERVOup(uint8_t scale) {
+    int interval = (scale+1) * 10;
+    if(goalAng >= 2500 - interval) 
         goalAng = 2500;
     else
-        goalAng += 10;
+        goalAng += interval;
 }
-void SERVOdown() {
-    if(goalAng <= 510) 
+void SERVOdown(uint8_t scale) {
+    int interval = (scale+1) * 10;
+    if(goalAng <= 500+interval) 
         goalAng = 500;
     else
-        goalAng -= 10;
+        goalAng -= interval;
 }
 void SERVOupd() {
     if(workingAng == goalAng) return;
@@ -90,6 +92,8 @@ void USART_Init () {
     // Set frame data 8data, 2stop
     UCSR1C = (1<<USBS1) | (3<<UCSZ10);
     UCSR0C = (1<<USBS0) | (3<<UCSZ00);
+    // Enable internal pullup resistors
+    PUEA = (1<<PUEA1) | (1<<PUEA2) | (1<<PUEA4) | (1<<PUEA5);
 }
 void USART1_Transmit (unsigned char in) {
     while (!(UCSR1A & (1<<UDRE1)));
@@ -139,18 +143,12 @@ static inline void recAct(unsigned char len) {
         }
     } else {
         bufferReadIndex+=4; //address
-        switch(buffer[bufferReadIndex]) {
-            case 240:
-                SERVOdown();
-                bufferReadIndex++;
-                break;
-            case 250:
-                SERVOup();
-                bufferReadIndex++;
-                break;
-            default:
-                SERVOto(read());
-        }
+        if(buffer[bufferReadIndex] >= 230 && buffer[bufferReadIndex] < 240) {
+            SERVOdown(read()-230);
+        } else if(buffer[bufferReadIndex] >= 240 && buffer[bufferReadIndex] < 250) {
+            SERVOup(read()-240);
+        } else
+            SERVOto(read());
     }
 }
 

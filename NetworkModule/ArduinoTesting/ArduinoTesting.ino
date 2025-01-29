@@ -106,8 +106,8 @@ void checkBuffer() {
 }
 
 void loop() {
-
   if (IrReceiver.decode() && IrReceiver.decodedIRData.protocol != UNKNOWN) {
+    Serial.println(IrReceiver.decodedIRData.command);
     switch(IrReceiver.decodedIRData.command) {
       case 0x5E:
         //sendACT(2, 245);

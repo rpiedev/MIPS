@@ -1,5 +1,4 @@
-//#include "S:\bot\MIPS\MIPSlab\MipsLib"
-//#include "MipsLib.h"
+#include "MipsLib.h"
 
 int base = 6;
 int arm = 7;
@@ -8,18 +7,19 @@ int claw = 5;
 MipsLab ml;
 
 void setup() {
-  ml.Start();
-  //ml.ControlStart();
-  //ml.ControlServoUp("9", claw);
+ml.Start();
+ml.ServoTo(arm,90);
+ml.ControlStart();
+
 }
 
 void loop() {
-  //ml.ControlLoop();
-  ml.ServoUp(claw);
-  delay(1000);
-  ml.ServoDown(claw);
-  delay(1000);
-  ml.ServoTo(base, 70);
-  delay(1000);
-  ml.ServoTo(base, 90);
+  ml.ControlServoUp("1", arm);
+  ml.ControlServoUp("2", base);
+  ml.ControlServoUp("3", claw);
+  ml.ControlServoDown("4", arm);
+  ml.ControlServoDown("5", base);
+  ml.ControlServoDown("6", claw);
+  ml.ControlLoop();
+//  ml.ControlServoUp("1", arm);
 }

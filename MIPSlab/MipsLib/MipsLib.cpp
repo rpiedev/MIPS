@@ -22,8 +22,9 @@ const std::map<std::string, uint16_t> MipsLab::controllerAddress {
 
 //*  Private Essential
 //sends ACT packet from Hub
-int MipsLab::sendACT(uint32_t address, uint8_t *msg, uint8_t msgLen) {
+int MipsLab::sendACT(uint32_t address, const uint32_t msg, uint8_t msgLen) {
     uint8_t *b = (uint8_t *)&address; //Turn address into array of bytes
+    uint8_t *m = (uint8_t *)&msg; //Turn message into array of bytes
     Serial3.write(6+msgLen); // 6 is length of ACT packet
     Serial3.write(0x25); //0x25 is type ID for ACT packet, 2
     Serial3.write(b[3]); //address, 3
@@ -31,7 +32,7 @@ int MipsLab::sendACT(uint32_t address, uint8_t *msg, uint8_t msgLen) {
     Serial3.write(b[1]); //address, 5
     Serial3.write(b[0]); //address, 6
     for (uint8_t i = 0; i < msgLen; i++) {
-        Serial3.write(msg[i]); // message, 7+
+        Serial3.write(m[i]); // message, 7+
     }
     return 1;
 }
@@ -42,6 +43,8 @@ std::string MipsLab::Error(uint16_t ecode) {
             return "Servo has a maximum angle of 180 degrees";
         case 2:
             return "Intensity ranges from 0 to 9";
+        default:
+            return "Undefined Error";
     }
 }
 
@@ -53,13 +56,17 @@ MipsLab::MipsLab() {
     modules.push_back({6,3,1}); // Module 6 is servo, second
     modules.push_back({5,2,1}); // Module 5 is claw,  third
 
-    //  Temporary direct assignment of controller pairs
-    controllerPair[12] = sendACT(6,(uint8_t*){245}, 1); // 1 button, base counter
-    controllerPair[8]  = sendACT(6,(uint8_t*){235}, 1); // 4 button, base clockwise
-    controllerPair[94] = sendACT(5,(uint8_t*){245}, 1); // 3 button, claw close
-    controllerPair[90] = sendACT(5,(uint8_t*){235}, 1); // 6 button, claw open
-    controllerPair[82] = sendACT(7,(uint8_t*){245}, 1); // 8 button, arm down
-    controllerPair[74] = sendACT(7,(uint8_t*){235}, 1); // 9 button, arm up
+    /*  Temporary direct assignment of controller pairs
+    static const uint8_t a245[] = {245};
+    static const uint8_t a235[] = {235};
+    
+    controllerPair.emplace(12,sendACT(6, a245, 1)); // 1 button, base counter
+    controllerPair.emplace(8 ,sendACT(6, a235, 1)); // 4 button, base clockwise
+    controllerPair.emplace(94,sendACT(5, a245, 1)); // 3 button, claw close
+    controllerPair.emplace(90,sendACT(5, a235, 1)); // 6 button, claw open
+    controllerPair.emplace(82,sendACT(7, a245, 1)); // 8 button, arm down
+    controllerPair.emplace(74,sendACT(7, a235, 1)); // 9 button, arm up
+    */
 }
 
 // Should be put in the setup
@@ -82,44 +89,57 @@ int MipsLab::ControlStart() {
 int MipsLab::ServoUp(uint32_t address, uint8_t intensity) {
     if(intensity > 9)
         return 2;
-    sendACT(address,230+intensity);
+    const uint32_t msg = 230+intensity;
+    sendACT(address, msg, 1);
+    return 0;
 }
 int MipsLab::ControlServoUp(std::string button, uint32_t address, uint8_t intensity) {
     if(intensity > 9)
         return 2;
-    controllerPair[controllerAddress[button]] = sendACT(address,(uint8_t*){230+intensity}, 1);
+    const uint32_t msg = 230+intensity;
+    am val = {address, msg, 1};
+    controllerPair.emplace(controllerAddress.at(button), val);
+    return 0;
 }
 // Increases servo duty cycle, on "angle" of 240 to 249; higher angle increases distance
 int MipsLab::ServoDown(uint32_t address, uint8_t intensity) {
     if(intensity > 9)
         return 2;
-    sendACT(address,240+intensity);
+    const uint32_t msg = 240+intensity;
+    sendACT(address, msg, 1);
+    return 0;
 }
 int MipsLab::ControlServoDown(std::string button, uint32_t address, uint8_t intensity) {
     if(intensity > 9)
         return 2;
-    controllerPair[controllerAddress[button]] = sendACT(address,(uint8_t*){240+intensity}, 1);
-}
-// Should go near enough
-int ServoTo(uint32_t address, uint8_t angle) {
-    if(angle > 180)
-        return 1;
-    sendACT(address,angle);
+    const uint32_t msg = 240+intensity;
+    am val = {address, msg, 1};
+    controllerPair.emplace(controllerAddress.at(button),val);
     return 0;
 }
-int ControlServoTo(std::string button, uint32_t address, uint8_t angle) {
+// Should go near enough
+int MipsLab::ServoTo(uint32_t address, uint8_t angle) {
     if(angle > 180)
         return 1;
-    controllerPair[controllerAddress[button]] = sendACT(address,(uint8_t*){angle}, 1);
+    const uint32_t msg = angle;
+    sendACT(address, msg, 1);
+    return 0;
+}
+int MipsLab::ControlServoTo(std::string button, uint32_t address, uint8_t angle) {
+    if(angle > 180)
+        return 1;
+    const uint32_t msg = angle;
+    am val = {address, msg, 1};
+    controllerPair.emplace(controllerAddress.at(button),val);
     return 0;
 }
 
 //* Public Controller Functions
 int MipsLab::ControlLoop() {
-    if (IrReceiver.decode() && IrReceiver.decodedIRData.protocol != UNKNOWN) {
+    if (IrReceiver.decode() && IrReceiver.decodedIRData.protocol != UNKNOWN) {    
         for(const auto &conPair : controllerPair) {
             if(IrReceiver.decodedIRData.command == conPair.first) {
-                sendACT(conPair.second.address,conPair.second.msg);
+                sendACT(conPair.second.address, conPair.second.msg, conPair.second.msgLen);
                 break;
             }
         }

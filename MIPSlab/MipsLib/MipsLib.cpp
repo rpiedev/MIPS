@@ -37,24 +37,34 @@ int MipsLab::sendACT(uint32_t address, const uint32_t msg, uint8_t msgLen) {
     return 1;
 }
 
+int MipsLab::sendHUB() {
+    Serial3.write(0x2);
+    Serial3.write(0x9);
+    return 1;
+}
+
 std::string MipsLab::Error(uint16_t ecode) {
     switch(ecode) {
         case 1:
             return "Servo has a maximum angle of 180 degrees";
         case 2:
             return "Intensity ranges from 0 to 9";
+        case 4:
+            return "Module is not correct type";
         default:
             return "Undefined Error";
     }
 }
 
-//*  Public Essential
+//*  Public 
 // Initialize some settings eventually
 MipsLab::MipsLab() {
     //  Temporary direct assignment of connected modules
-    modules.push_back({7,3,1}); // Module 7 is servo, first 
-    modules.push_back({6,3,1}); // Module 6 is servo, second
-    modules.push_back({5,2,1}); // Module 5 is claw,  third
+    MipsModule servo = {3,1};
+    MipsModule claw = {2,1};
+    modules.emplace(7, servo); // Module 7 is servo, first 
+    modules.emplace(6, servo); // Module 6 is servo, second
+    modules.emplace(5, claw); // Module 5 is claw,  third
 
     /*  Temporary direct assignment of controller pairs
     static const uint8_t a245[] = {245};
@@ -86,14 +96,14 @@ int MipsLab::ControlStart() {
 //*  Public Module Functions with Controller versions
 //TODO These assume the address actually goes to a servo, which should be changed to check
 // Lowers servo duty cycle, on "angle" of 230 to 239; higher angle increases distance
-int MipsLab::ServoUp(uint32_t address, uint8_t intensity) {
+int MipsLab::ElbowUp(uint32_t address, uint8_t intensity) {
     if(intensity > 9)
         return 2;
     const uint32_t msg = 230+intensity;
     sendACT(address, msg, 1);
     return 0;
 }
-int MipsLab::ControlServoUp(std::string button, uint32_t address, uint8_t intensity) {
+int MipsLab::ControlElbowUp(std::string button, uint32_t address, uint8_t intensity) {
     if(intensity > 9)
         return 2;
     const uint32_t msg = 230+intensity;
@@ -101,15 +111,15 @@ int MipsLab::ControlServoUp(std::string button, uint32_t address, uint8_t intens
     controllerPair.emplace(controllerAddress.at(button), val);
     return 0;
 }
-// Increases servo duty cycle, on "angle" of 240 to 249; higher angle increases distance
-int MipsLab::ServoDown(uint32_t address, uint8_t intensity) {
+// Increases Elbow duty cycle, on "angle" of 240 to 249; higher angle increases distance
+int MipsLab::ElbowDown(uint32_t address, uint8_t intensity) {
     if(intensity > 9)
         return 2;
     const uint32_t msg = 240+intensity;
     sendACT(address, msg, 1);
     return 0;
 }
-int MipsLab::ControlServoDown(std::string button, uint32_t address, uint8_t intensity) {
+int MipsLab::ControlElbowDown(std::string button, uint32_t address, uint8_t intensity) {
     if(intensity > 9)
         return 2;
     const uint32_t msg = 240+intensity;
@@ -118,14 +128,14 @@ int MipsLab::ControlServoDown(std::string button, uint32_t address, uint8_t inte
     return 0;
 }
 // Should go near enough
-int MipsLab::ServoTo(uint32_t address, uint8_t angle) {
+int MipsLab::ElbowTo(uint32_t address, uint8_t angle) {
     if(angle > 180)
         return 1;
     const uint32_t msg = angle;
     sendACT(address, msg, 1);
     return 0;
 }
-int MipsLab::ControlServoTo(std::string button, uint32_t address, uint8_t angle) {
+int MipsLab::ControlElbowTo(std::string button, uint32_t address, uint8_t angle) {
     if(angle > 180)
         return 1;
     const uint32_t msg = angle;

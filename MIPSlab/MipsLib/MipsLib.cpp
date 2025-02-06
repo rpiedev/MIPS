@@ -55,6 +55,16 @@ std::string MipsLab::Error(uint16_t ecode) {
             return "Undefined Error";
     }
 }
+//Private Buffer
+static inline unsigned char MipsLab::read() {
+    uint8_t oldIndex = bufferReadIndex;
+    bufferReadIndex+=1;
+    return buffer[oldIndex];
+}
+static inline void MipsLab::write(unsigned char in) {
+    buffer[bufferWriteIndex] = in;
+    bufferWriteIndex+=1;
+}
 
 //*  Public 
 // Initialize some settings eventually
@@ -81,9 +91,24 @@ MipsLab::MipsLab() {
 
 // Should be put in the setup
 int MipsLab::Start() {
-    Serial3.begin(38400, SERIAL_8N2); // Hub Input / Output
+    Serial3.begin(38400, SERIAL_8N2); // Hub Input / Output (packets)
+    Serial.begin(38400); // UI
 
-    Serial.begin(38400); // Debugging
+    uint32_t isDoneTimer = 0;
+
+    sendHUB(); // send hub to see what modules are connected
+    while(isDoneTimer < 1000) { //this one gets all the messages hopefully
+        if(Serial3.available() > 0) {
+            write(Serial3.read());
+            isDoneTimer = 0;
+        }
+    }
+    
+    //await for end of serial3 messages
+    //once that is done do it again to confirm, until same result twice in a row
+    //afterwards, print to serial results
+    //continue
+
     return 1;
 }
 // Should be put in the setup

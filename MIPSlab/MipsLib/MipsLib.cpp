@@ -43,6 +43,34 @@ int MipsLab::sendHUB() {
     return 1;
 }
 
+int MipsLab::updateModules() {
+    uint32_t isDoneTimer = 0;
+    sendHUB(); // send hub to see what modules are connected
+    while(isDoneTimer < 100000) { //this one gets all the messages hopefully (imprecise)
+        
+        if(Serial3.available() > 0) {
+            write(Serial3.read());
+            isDoneTimer = 0;
+        }
+        checkBuffer();
+        isDoneTimer++;
+    }
+    isDoneTimer = 0;
+    for(auto const& module : modules) {
+        isDoneTimer++;
+        Serial.print(isDoneTimer);
+        Serial.print(": Module with address ");
+        Serial.print(module.first);
+        Serial.print(" of type ");
+        Serial.println(module.second.type);
+    }
+    // await for end of serial3 messages
+    // once that is done do it again to confirm, until same result twice in a row
+    // afterwards, print to serial results
+    // continue
+    return 1;
+}
+
 std::string MipsLab::Error(uint16_t ecode) {
     switch(ecode) {
         case 1:
@@ -56,36 +84,54 @@ std::string MipsLab::Error(uint16_t ecode) {
     }
 }
 //Private Buffer
-static inline unsigned char MipsLab::read() {
+unsigned char MipsLab::read() {
     uint8_t oldIndex = bufferReadIndex;
     bufferReadIndex+=1;
     return buffer[oldIndex];
 }
-static inline void MipsLab::write(unsigned char in) {
+void MipsLab::write(unsigned char in) {
     buffer[bufferWriteIndex] = in;
     bufferWriteIndex+=1;
+}
+
+void MipsLab::checkBuffer() {
+    uint8_t diff = bufferWriteIndex >= bufferReadIndex ? bufferWriteIndex - bufferReadIndex : bufferWriteIndex + (64 - bufferReadIndex);
+    if(bufferReadIndex == bufferWriteIndex) return; // maybe enable sleep mode?
+    if(buffer[bufferReadIndex] < 2) {
+        bufferReadIndex+=1;
+        return;
+    }
+    if(diff < buffer[bufferReadIndex]) return;
+    unsigned char packetLen = read();
+    unsigned char packetType = read();
+    if(packetType!=0x18) {
+        bufferReadIndex += (packetLen-2);
+        return;
+    }
+    uint32_t address;
+    MipsModule newMod;
+    std::memcpy(&address, buffer+bufferReadIndex+3, 1);
+    std::memcpy((char*)&address+1, buffer+bufferReadIndex+2, 1);
+    std::memcpy((char*)&address+2, buffer+bufferReadIndex+1, 1);
+    std::memcpy((char*)&address+3, buffer+bufferReadIndex, 1);
+    std::memcpy((char*)&newMod.type, buffer+bufferReadIndex+5, 1);
+    std::memcpy((char*)&newMod.type+1, buffer+bufferReadIndex+4, 1);
+    std::memcpy((char*)&newMod.version, buffer+bufferReadIndex+7, 1);
+    std::memcpy((char*)&newMod.version+1, buffer+bufferReadIndex+6, 1);
+    
+    bufferReadIndex += 8;
+    modules.emplace(address, newMod);
 }
 
 //*  Public 
 // Initialize some settings eventually
 MipsLab::MipsLab() {
-    //  Temporary direct assignment of connected modules
+    /*  Temporary direct assignment of connected modules
     MipsModule servo = {3,1};
     MipsModule claw = {2,1};
     modules.emplace(7, servo); // Module 7 is servo, first 
     modules.emplace(6, servo); // Module 6 is servo, second
     modules.emplace(5, claw); // Module 5 is claw,  third
-
-    /*  Temporary direct assignment of controller pairs
-    static const uint8_t a245[] = {245};
-    static const uint8_t a235[] = {235};
-    
-    controllerPair.emplace(12,sendACT(6, a245, 1)); // 1 button, base counter
-    controllerPair.emplace(8 ,sendACT(6, a235, 1)); // 4 button, base clockwise
-    controllerPair.emplace(94,sendACT(5, a245, 1)); // 3 button, claw close
-    controllerPair.emplace(90,sendACT(5, a235, 1)); // 6 button, claw open
-    controllerPair.emplace(82,sendACT(7, a245, 1)); // 8 button, arm down
-    controllerPair.emplace(74,sendACT(7, a235, 1)); // 9 button, arm up
     */
 }
 
@@ -94,20 +140,7 @@ int MipsLab::Start() {
     Serial3.begin(38400, SERIAL_8N2); // Hub Input / Output (packets)
     Serial.begin(38400); // UI
 
-    uint32_t isDoneTimer = 0;
-
-    sendHUB(); // send hub to see what modules are connected
-    while(isDoneTimer < 1000) { //this one gets all the messages hopefully
-        if(Serial3.available() > 0) {
-            write(Serial3.read());
-            isDoneTimer = 0;
-        }
-    }
-    
-    //await for end of serial3 messages
-    //once that is done do it again to confirm, until same result twice in a row
-    //afterwards, print to serial results
-    //continue
+    updateModules();
 
     return 1;
 }
@@ -181,9 +214,9 @@ int MipsLab::ControlLoop() {
     }
     IrReceiver.resume();
 
-    if(Serial3.available() > 1) {
-        Serial.println(Serial3.read());
-    } 
+    //if(Serial3.available() > 1) {
+    //    Serial.println(Serial3.read());
+    //} 
     return 1;
 }
 

@@ -8,6 +8,7 @@
 #include "Arduino.h"
 #include <map>
 #include <string>
+#include <cstring>
 
 struct MipsModule {
     uint16_t type;
@@ -23,10 +24,10 @@ class MipsLab {
     public:
         //Essential
         MipsLab();
-        int sendHUB();
         int Start(); // Must be used in setup
         int Loop(); // Must be used in loop
 
+        //TODO change address name to ID, its easier to understand
         //Module specific functions
         int ElbowUp(uint32_t address, uint8_t intensity = 5);
         int ElbowDown(uint32_t address, uint8_t intensity = 5);
@@ -52,11 +53,14 @@ class MipsLab {
         uint8_t bufferReadIndex = 0;
         uint8_t bufferWriteIndex = 0;
         uint8_t workingLen = 0;
-        static inline unsigned char read();
-        static inline void write(unsigned char in);
+        unsigned char read();
+        void write(unsigned char in);
+        void checkBuffer();
 
         //Essential
         int sendACT(uint32_t address, const uint32_t msg, uint8_t msgLen);
+        int sendHUB();
+        int updateModules();
         std::string Error(uint16_t ecode);
 };
 

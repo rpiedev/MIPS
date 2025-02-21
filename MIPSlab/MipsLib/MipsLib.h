@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <cstring>
+#include <vector>
 
 struct MipsModule {
     uint16_t type;
@@ -45,8 +46,10 @@ class MipsLab {
     private:
         //Containers
         static const std::map<std::string, uint16_t> controllerAddress;
+        static const std::map<uint16_t, std::string> moduleTypes;
         std::map<uint16_t, am> controllerPair;
         std::map<uint32_t, MipsModule> modules;
+        std::vector<uint16_t> moduleOrder;
 
         //Circular Buffer
         unsigned char buffer[64];

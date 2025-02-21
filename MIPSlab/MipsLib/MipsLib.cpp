@@ -20,6 +20,10 @@ const std::map<std::string, uint16_t> MipsLab::controllerAddress {
     {"7",   66}, {"8",   82}, {"9",   74},
 };
 
+const std::map<uint16_t, std::string> MipsLab::moduleTypes {
+    {1,"LED"}, {2,"Claw"}, {3,"Elbow"}
+};
+
 //*  Private Essential
 //sends ACT packet from Hub
 int MipsLab::sendACT(uint32_t address, const uint32_t msg, uint8_t msgLen) {
@@ -55,14 +59,18 @@ int MipsLab::updateModules() {
         checkBuffer();
         isDoneTimer++;
     }
-    isDoneTimer = 0;
-    for(auto const& module : modules) {
-        isDoneTimer++;
-        Serial.print(isDoneTimer);
-        Serial.print(": Module with address ");
-        Serial.print(module.first);
-        Serial.print(" of type ");
-        Serial.println(module.second.type);
+    for(int i=0;i<30;i++) {
+        Serial.println();
+    }
+    isDoneTimer = 1;
+    Serial.print("Modules connected... ");
+    Serial.println(modules.size());
+    for(auto const& address : moduleOrder) {
+        Serial.print(isDoneTimer++);
+        Serial.print(": ");
+        Serial.print(moduleTypes.at(modules.at(address).type).c_str());
+        Serial.print(" module with address ");
+        Serial.println(address);
     }
     // await for end of serial3 messages
     // once that is done do it again to confirm, until same result twice in a row
@@ -118,21 +126,15 @@ void MipsLab::checkBuffer() {
     std::memcpy((char*)&newMod.type+1, buffer+bufferReadIndex+4, 1);
     std::memcpy((char*)&newMod.version, buffer+bufferReadIndex+7, 1);
     std::memcpy((char*)&newMod.version+1, buffer+bufferReadIndex+6, 1);
-    
     bufferReadIndex += 8;
+    moduleOrder.push_back(address);
     modules.emplace(address, newMod);
 }
 
 //*  Public 
 // Initialize some settings eventually
 MipsLab::MipsLab() {
-    /*  Temporary direct assignment of connected modules
-    MipsModule servo = {3,1};
-    MipsModule claw = {2,1};
-    modules.emplace(7, servo); // Module 7 is servo, first 
-    modules.emplace(6, servo); // Module 6 is servo, second
-    modules.emplace(5, claw); // Module 5 is claw,  third
-    */
+
 }
 
 // Should be put in the setup

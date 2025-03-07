@@ -8,18 +8,12 @@ MipsLab ml;
 
 void setup() {
   ml.Start();
-  ml.ControlStart();
-
-  ml.ControlElbowDown("1", base);
-  ml.ControlElbowUp("3", base);
-  
-  ml.ControlElbowDown("4", arm);
-  ml.ControlElbowUp("6", arm);
-  
-  ml.ControlElbowDown("7", claw);
-  ml.ControlElbowUp("9", claw);
 }
 
 void loop() {
-  ml.ControlLoop();
+  ml.ElbowTo(claw, 60);
+  delay(1000);
+  ml.ElbowTo(claw, 90);
+  delay(1000);
 }
+

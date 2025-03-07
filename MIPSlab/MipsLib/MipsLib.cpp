@@ -29,21 +29,21 @@ const std::map<uint16_t, std::string> MipsLab::moduleTypes {
 int MipsLab::sendACT(uint32_t address, const uint32_t msg, uint8_t msgLen) {
     uint8_t *b = (uint8_t *)&address; //Turn address into array of bytes
     uint8_t *m = (uint8_t *)&msg; //Turn message into array of bytes
-    Serial3.write(6+msgLen); // 6 is length of ACT packet
-    Serial3.write(0x25); //0x25 is type ID for ACT packet, 2
-    Serial3.write(b[3]); //address, 3
-    Serial3.write(b[2]); //address, 4
-    Serial3.write(b[1]); //address, 5
-    Serial3.write(b[0]); //address, 6
+    Serial.write(6+msgLen); // 6 is length of ACT packet
+    Serial.write(0x25); //0x25 is type ID for ACT packet, 2
+    Serial.write(b[3]); //address, 3
+    Serial.write(b[2]); //address, 4
+    Serial.write(b[1]); //address, 5
+    Serial.write(b[0]); //address, 6
     for (uint8_t i = 0; i < msgLen; i++) {
-        Serial3.write(m[i]); // message, 7+
+        Serial.write(m[i]); // message, 7+
     }
     return 1;
 }
 
 int MipsLab::sendHUB() {
-    Serial3.write(0x2);
-    Serial3.write(0x9);
+    Serial.write(0x2);
+    Serial.write(0x9);
     return 1;
 }
 
@@ -52,13 +52,14 @@ int MipsLab::updateModules() {
     sendHUB(); // send hub to see what modules are connected
     while(isDoneTimer < 100000) { //this one gets all the messages hopefully (imprecise)
         
-        if(Serial3.available() > 0) {
-            write(Serial3.read());
+        if(Serial.available() > 0) {
+            write(Serial.read());
             isDoneTimer = 0;
         }
         checkBuffer();
         isDoneTimer++;
     }
+    /*
     for(int i=0;i<30;i++) {
         Serial.println();
     }
@@ -72,6 +73,7 @@ int MipsLab::updateModules() {
         Serial.print(" module with address ");
         Serial.println(address);
     }
+        */
     // await for end of serial3 messages
     // once that is done do it again to confirm, until same result twice in a row
     // afterwards, print to serial results
@@ -128,7 +130,7 @@ void MipsLab::checkBuffer() {
     std::memcpy((char*)&newMod.version+1, buffer+bufferReadIndex+6, 1);
     bufferReadIndex += 8;
     moduleOrder.push_back(address);
-    modules.emplace(address, newMod);
+    modules.insert(address, newMod);
 }
 
 //*  Public 
@@ -139,8 +141,8 @@ MipsLab::MipsLab() {
 
 // Should be put in the setup
 int MipsLab::Start() {
-    Serial3.begin(38400, SERIAL_8N2); // Hub Input / Output (packets)
-    Serial.begin(38400); // UI
+    Serial.begin(BaudRate, SERIAL_8N2); // Hub Input / Output (packets)
+    Serial.begin(BaudRate); // UI
 
     updateModules();
 
@@ -148,7 +150,7 @@ int MipsLab::Start() {
 }
 // Should be put in the setup
 int MipsLab::ControlStart() {
-    IrReceiver.begin(5, ENABLE_LED_FEEDBACK); // IR reciever on pin 5
+    IrReceiver.begin(IRPin, ENABLE_LED_FEEDBACK); // IR reciever on pin 5
     return 1;
 }
 
@@ -168,7 +170,7 @@ int MipsLab::ControlElbowUp(std::string button, uint32_t address, uint8_t intens
         return 2;
     const uint32_t msg = 230+intensity;
     am val = {address, msg, 1};
-    controllerPair.emplace(controllerAddress.at(button), val);
+    controllerPair.insert(controllerAddress.at(button), val);
     return 0;
 }
 // Increases Elbow duty cycle, on "angle" of 240 to 249; higher angle increases distance
@@ -184,7 +186,7 @@ int MipsLab::ControlElbowDown(std::string button, uint32_t address, uint8_t inte
         return 2;
     const uint32_t msg = 240+intensity;
     am val = {address, msg, 1};
-    controllerPair.emplace(controllerAddress.at(button),val);
+    controllerPair.insert(controllerAddress.at(button),val);
     return 0;
 }
 // Should go near enough
@@ -200,7 +202,7 @@ int MipsLab::ControlElbowTo(std::string button, uint32_t address, uint8_t angle)
         return 1;
     const uint32_t msg = angle;
     am val = {address, msg, 1};
-    controllerPair.emplace(controllerAddress.at(button),val);
+    controllerPair.insert(controllerAddress.at(button),val);
     return 0;
 }
 
@@ -216,8 +218,8 @@ int MipsLab::ControlLoop() {
     }
     IrReceiver.resume();
 
-    //if(Serial3.available() > 1) {
-    //    Serial.println(Serial3.read());
+    //if(Serial.available() > 1) {
+    //    Serial.println(Serial.read());
     //} 
     return 1;
 }

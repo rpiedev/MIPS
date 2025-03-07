@@ -6,6 +6,7 @@
 #define MIPSLIB_H
 
 #include "Arduino.h"
+#include <ArduinoSTL.h>
 #include <map>
 #include <string>
 #include <cstring>
@@ -65,6 +66,10 @@ class MipsLab {
         int sendHUB();
         int updateModules();
         std::string Error(uint16_t ecode);
+
+        //Constants
+        const uint8_t IRPin = 17;
+        const uint16_t BaudRate = 38400;
 };
 
 #endif //MIPSLIB_H

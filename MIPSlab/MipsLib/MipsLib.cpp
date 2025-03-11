@@ -130,7 +130,7 @@ void MipsLab::checkBuffer() {
     std::memcpy((char*)&newMod.version+1, buffer+bufferReadIndex+6, 1);
     bufferReadIndex += 8;
     moduleOrder.push_back(address);
-    modules.insert(address, newMod);
+    modules[address] = newMod;
 }
 
 //*  Public 
@@ -170,7 +170,7 @@ int MipsLab::ControlElbowUp(std::string button, uint32_t address, uint8_t intens
         return 2;
     const uint32_t msg = 230+intensity;
     am val = {address, msg, 1};
-    controllerPair.insert(controllerAddress.at(button), val);
+    controllerPair[controllerAddress[button]] = val;
     return 0;
 }
 // Increases Elbow duty cycle, on "angle" of 240 to 249; higher angle increases distance
@@ -186,7 +186,7 @@ int MipsLab::ControlElbowDown(std::string button, uint32_t address, uint8_t inte
         return 2;
     const uint32_t msg = 240+intensity;
     am val = {address, msg, 1};
-    controllerPair.insert(controllerAddress.at(button),val);
+    controllerPair[controllerAddress[button]] = val;
     return 0;
 }
 // Should go near enough
@@ -202,7 +202,7 @@ int MipsLab::ControlElbowTo(std::string button, uint32_t address, uint8_t angle)
         return 1;
     const uint32_t msg = angle;
     am val = {address, msg, 1};
-    controllerPair.insert(controllerAddress.at(button),val);
+    controllerPair[controllerAddress[button]] = val;
     return 0;
 }
 

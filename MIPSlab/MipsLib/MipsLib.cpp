@@ -10,7 +10,7 @@
 #include "MipsLib.h"
 
 //*  Private Containers
-const std::map<std::string, uint16_t> MipsLab::controllerAddress {
+const ControllerAddress MipsLab::controllerAddresses[] = {
     {"CH-", 69}, {"CH",  70}, {"CH+", 71},
     {"PREV",68}, {"NEXT",64}, {"PLAY",67},
     {"VOL-", 7}, {"VOL+",21}, {"EQ",   9},
@@ -19,31 +19,44 @@ const std::map<std::string, uint16_t> MipsLab::controllerAddress {
     {"4",    8}, {"5",   28}, {"6",   90},
     {"7",   66}, {"8",   82}, {"9",   74},
 };
+uint16_t MipsLab::getControllerAddress(std::string name) {
+    for(const ControllerAddress &ca : controllerAddresses)
+        if(ca.name == name)
+            return ca.address;
+    return 0;
+}
 
-const std::map<uint16_t, std::string> MipsLab::moduleTypes {
-    {1,"LED"}, {2,"Claw"}, {3,"Elbow"}
-};
+void MipsLab::newControllerMessage(ControllerMessage cm) {
+    for(const ControllerMessage &cm1 : controllerMessages)
+        if(cm1.controllerAddress == cm.controllerAddress) {
+            cm1 = cm;
+            return;
+        }
+    controllerMessages.push_back(cm);
+}
+
+const std::string MipsLab::moduleTypes[] = {"","LED","Claw","Elbow"};
 
 //*  Private Essential
 //sends ACT packet from Hub
 int MipsLab::sendACT(uint32_t address, const uint32_t msg, uint8_t msgLen) {
     uint8_t *b = (uint8_t *)&address; //Turn address into array of bytes
     uint8_t *m = (uint8_t *)&msg; //Turn message into array of bytes
-    Serial.write(6+msgLen); // 6 is length of ACT packet
-    Serial.write(0x25); //0x25 is type ID for ACT packet, 2
-    Serial.write(b[3]); //address, 3
-    Serial.write(b[2]); //address, 4
-    Serial.write(b[1]); //address, 5
-    Serial.write(b[0]); //address, 6
+    Serial1.write(6+msgLen); // 6 is length of ACT packet
+    Serial1.write(0x25); //0x25 is type ID for ACT packet, 2
+    Serial1.write(b[3]); //address, 3
+    Serial1.write(b[2]); //address, 4
+    Serial1.write(b[1]); //address, 5
+    Serial1.write(b[0]); //address, 6
     for (uint8_t i = 0; i < msgLen; i++) {
-        Serial.write(m[i]); // message, 7+
+        Serial1.write(m[i]); // message, 7+
     }
     return 1;
 }
 
 int MipsLab::sendHUB() {
-    Serial.write(0x2);
-    Serial.write(0x9);
+    Serial1.write(0x2);
+    Serial1.write(0x9);
     return 1;
 }
 
@@ -52,29 +65,29 @@ int MipsLab::updateModules() {
     sendHUB(); // send hub to see what modules are connected
     while(isDoneTimer < 100000) { //this one gets all the messages hopefully (imprecise)
         
-        if(Serial.available() > 0) {
-            write(Serial.read());
+        if(Serial1.available() > 0) {
+            write(Serial1.read());
             isDoneTimer = 0;
         }
         checkBuffer();
         isDoneTimer++;
     }
-    /*
+    
     for(int i=0;i<30;i++) {
         Serial.println();
     }
     isDoneTimer = 1;
     Serial.print("Modules connected... ");
     Serial.println(modules.size());
-    for(auto const& address : moduleOrder) {
+    for(MipsModule const& module : modules) {
         Serial.print(isDoneTimer++);
         Serial.print(": ");
-        Serial.print(moduleTypes.at(modules.at(address).type).c_str());
+        Serial.print(moduleTypes[module.type].c_str());
         Serial.print(" module with address ");
-        Serial.println(address);
+        Serial.println(module.address);
     }
-        */
-    // await for end of serial3 messages
+        
+    // await for end of serial1 messages
     // once that is done do it again to confirm, until same result twice in a row
     // afterwards, print to serial results
     // continue
@@ -118,19 +131,18 @@ void MipsLab::checkBuffer() {
         bufferReadIndex += (packetLen-2);
         return;
     }
-    uint32_t address;
     MipsModule newMod;
-    std::memcpy(&address, buffer+bufferReadIndex+3, 1);
-    std::memcpy((char*)&address+1, buffer+bufferReadIndex+2, 1);
-    std::memcpy((char*)&address+2, buffer+bufferReadIndex+1, 1);
-    std::memcpy((char*)&address+3, buffer+bufferReadIndex, 1);
+    std::memcpy((char*)&newMod.address, buffer+bufferReadIndex+3, 1);
+    std::memcpy((char*)&newMod.address+1, buffer+bufferReadIndex+2, 1);
+    std::memcpy((char*)&newMod.address+2, buffer+bufferReadIndex+1, 1);
+    std::memcpy((char*)&newMod.address+3, buffer+bufferReadIndex, 1);
     std::memcpy((char*)&newMod.type, buffer+bufferReadIndex+5, 1);
     std::memcpy((char*)&newMod.type+1, buffer+bufferReadIndex+4, 1);
     std::memcpy((char*)&newMod.version, buffer+bufferReadIndex+7, 1);
     std::memcpy((char*)&newMod.version+1, buffer+bufferReadIndex+6, 1);
     bufferReadIndex += 8;
-    moduleOrder.push_back(address);
-    modules.insert(address, newMod);
+    
+    modules.push_back(newMod);
 }
 
 //*  Public 
@@ -141,8 +153,10 @@ MipsLab::MipsLab() {
 
 // Should be put in the setup
 int MipsLab::Start() {
-    Serial.begin(BaudRate, SERIAL_8N2); // Hub Input / Output (packets)
+    Serial1.begin(BaudRate, SERIAL_8N2); // Hub Input / Output (packets)
     Serial.begin(BaudRate); // UI
+
+    while (!Serial) {} // Wait for the serial to start before continuing
 
     updateModules();
 
@@ -169,8 +183,8 @@ int MipsLab::ControlElbowUp(std::string button, uint32_t address, uint8_t intens
     if(intensity > 9)
         return 2;
     const uint32_t msg = 230+intensity;
-    am val = {address, msg, 1};
-    controllerPair.insert(controllerAddress.at(button), val);
+    ControllerMessage newMsg = {getControllerAddress(button), address, msg, 1};
+    newControllerMessage(newMsg);
     return 0;
 }
 // Increases Elbow duty cycle, on "angle" of 240 to 249; higher angle increases distance
@@ -185,8 +199,8 @@ int MipsLab::ControlElbowDown(std::string button, uint32_t address, uint8_t inte
     if(intensity > 9)
         return 2;
     const uint32_t msg = 240+intensity;
-    am val = {address, msg, 1};
-    controllerPair.insert(controllerAddress.at(button),val);
+    ControllerMessage newMsg = {getControllerAddress(button), address, msg, 1};
+    newControllerMessage(newMsg);
     return 0;
 }
 // Should go near enough
@@ -201,17 +215,17 @@ int MipsLab::ControlElbowTo(std::string button, uint32_t address, uint8_t angle)
     if(angle > 180)
         return 1;
     const uint32_t msg = angle;
-    am val = {address, msg, 1};
-    controllerPair.insert(controllerAddress.at(button),val);
+    ControllerMessage newMsg = {getControllerAddress(button), address, msg, 1};
+    newControllerMessage(newMsg);
     return 0;
 }
 
 //* Public Controller Functions
 int MipsLab::ControlLoop() {
     if (IrReceiver.decode() && IrReceiver.decodedIRData.protocol != UNKNOWN) {    
-        for(const auto &conPair : controllerPair) {
-            if(IrReceiver.decodedIRData.command == conPair.first) {
-                sendACT(conPair.second.address, conPair.second.msg, conPair.second.msgLen);
+        for(const ControllerMessage &cm : controllerMessages) {
+            if(IrReceiver.decodedIRData.command == cm.controllerAddress) {
+                sendACT(cm.moduleAddress, cm.msg, cm.msgLen);
                 break;
             }
         }

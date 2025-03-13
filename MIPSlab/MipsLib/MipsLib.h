@@ -6,20 +6,25 @@
 #define MIPSLIB_H
 
 #include "Arduino.h"
-#include <ArduinoSTL.h>
-#include <map>
+#include <Arduino_AVRSTL.h>
 #include <string>
 #include <cstring>
 #include <vector>
 
 struct MipsModule {
+    uint32_t address;
     uint16_t type;
     uint16_t version;
 };
-struct am {
-    uint32_t address;
+struct ControllerMessage {
+    uint16_t controllerAddress;
+    uint32_t moduleAddress;
     uint32_t msg;
     uint8_t msgLen;
+};
+struct ControllerAddress {
+    std::string name;
+    uint8_t address;
 };
 
 class MipsLab {
@@ -46,11 +51,15 @@ class MipsLab {
 
     private:
         //Containers
-        static const std::map<std::string, uint16_t> controllerAddress;
-        static const std::map<uint16_t, std::string> moduleTypes;
-        std::map<uint16_t, am> controllerPair;
-        std::map<uint32_t, MipsModule> modules;
-        std::vector<uint16_t> moduleOrder;
+        std::vector<ControllerMessage> controllerMessages;
+        void newControllerMessage(ControllerMessage cm);
+
+        std::vector<MipsModule> modules;
+
+        static const ControllerAddress controllerAddresses[];
+        uint16_t getControllerAddress(std::string name);
+
+        static const std::string moduleTypes[];
 
         //Circular Buffer
         unsigned char buffer[64];
@@ -70,6 +79,7 @@ class MipsLab {
         //Constants
         const uint8_t IRPin = 17;
         const uint16_t BaudRate = 38400;
+        const uint16_t UIBaudRate = 9600;
 };
 
 #endif //MIPSLIB_H

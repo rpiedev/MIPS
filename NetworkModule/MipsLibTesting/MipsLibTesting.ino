@@ -4,19 +4,16 @@ int base = 7;
 int arm = 6;
 int claw = 5;
 
-//MipsLab ml;
+MipsLab ml;
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  //ml.Start();
+  ml.Start();
 }
 
 void loop() {
-  //ml.ElbowTo(claw, 60);
-  digitalWrite(LED_BUILTIN, HIGH);
+  ml.ElbowTo(claw, 60);
   delay(2000);
-  //ml.ElbowTo(claw, 90);
-   digitalWrite(LED_BUILTIN, LOW);
+  ml.ElbowTo(claw, 90);
   delay(2000);
 }
 

@@ -6,7 +6,7 @@
 #define MIPSLIB_CPP
 
 #include "Arduino.h"
-#include <IRremote.hpp>
+//#include <IRremote.hpp>
 #include "MipsLib.h"
 
 //*  Private Containers
@@ -29,7 +29,7 @@ uint16_t MipsLab::getControllerAddress(std::string name) {
 void MipsLab::newControllerMessage(ControllerMessage cm) {
     for(const ControllerMessage &cm1 : controllerMessages)
         if(cm1.controllerAddress == cm.controllerAddress) {
-            cm1 = cm;
+            //cm1 = cm;
             return;
         }
     controllerMessages.push_back(cm);
@@ -79,7 +79,7 @@ int MipsLab::updateModules() {
     isDoneTimer = 1;
     Serial.print("Modules connected... ");
     Serial.println(modules.size());
-    for(MipsModule const& module : modules) {
+    for(const MipsModule& module : modules) {
         Serial.print(isDoneTimer++);
         Serial.print(": ");
         Serial.print(moduleTypes[module.type].c_str());
@@ -164,7 +164,7 @@ int MipsLab::Start() {
 }
 // Should be put in the setup
 int MipsLab::ControlStart() {
-    IrReceiver.begin(IRPin, ENABLE_LED_FEEDBACK); // IR reciever on pin 5
+    //IrReceiver.begin(IRPin, ENABLE_LED_FEEDBACK); // IR reciever on pin 5
     return 1;
 }
 
@@ -220,7 +220,7 @@ int MipsLab::ControlElbowTo(std::string button, uint32_t address, uint8_t angle)
     return 0;
 }
 
-//* Public Controller Functions
+/* Public Controller Functions 
 int MipsLab::ControlLoop() {
     if (IrReceiver.decode() && IrReceiver.decodedIRData.protocol != UNKNOWN) {    
         for(const ControllerMessage &cm : controllerMessages) {
@@ -237,5 +237,5 @@ int MipsLab::ControlLoop() {
     //} 
     return 1;
 }
-
+*/
 #endif //MIPSLAB_CPP

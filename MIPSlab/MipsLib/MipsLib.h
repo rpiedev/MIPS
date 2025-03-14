@@ -39,7 +39,8 @@ class MipsLab {
         int ElbowUp(uint32_t address, uint8_t intensity = 5);
         int ElbowDown(uint32_t address, uint8_t intensity = 5);
         int ElbowTo(uint32_t address, uint8_t angle);
-
+    
+    private: // Basically removing these
         //Controller specific functions
         int ControlStart(); // Used in setup if controller is used
         int ControlLoop(); // Used in loop if controller is used
@@ -77,7 +78,7 @@ class MipsLab {
         std::string Error(uint16_t ecode);
 
         //Constants
-        const uint8_t IRPin = 17;
+        const uint8_t IRPin = 5;
         const uint16_t BaudRate = 38400;
         const uint16_t UIBaudRate = 9600;
 };

@@ -6,35 +6,9 @@
 #define MIPSLIB_CPP
 
 #include "Arduino.h"
-//#include <IRremote.hpp>
 #include "MipsLib.h"
 
 //*  Private Containers
-const ControllerAddress MipsLab::controllerAddresses[] = {
-    {"CH-", 69}, {"CH",  70}, {"CH+", 71},
-    {"PREV",68}, {"NEXT",64}, {"PLAY",67},
-    {"VOL-", 7}, {"VOL+",21}, {"EQ",   9},
-    {"0",   22}, {"100+",25}, {"200+",13},
-    {"1",   12}, {"2",   24}, {"3",   94},
-    {"4",    8}, {"5",   28}, {"6",   90},
-    {"7",   66}, {"8",   82}, {"9",   74},
-};
-uint16_t MipsLab::getControllerAddress(std::string name) {
-    for(const ControllerAddress &ca : controllerAddresses)
-        if(ca.name == name)
-            return ca.address;
-    return 0;
-}
-
-void MipsLab::newControllerMessage(ControllerMessage cm) {
-    for(const ControllerMessage &cm1 : controllerMessages)
-        if(cm1.controllerAddress == cm.controllerAddress) {
-            //cm1 = cm;
-            return;
-        }
-    controllerMessages.push_back(cm);
-}
-
 const std::string MipsLab::moduleTypes[] = {"","LED","Claw","Elbow"};
 
 //*  Private Essential
@@ -162,11 +136,6 @@ int MipsLab::Start() {
 
     return 1;
 }
-// Should be put in the setup
-int MipsLab::ControlStart() {
-    //IrReceiver.begin(IRPin, ENABLE_LED_FEEDBACK); // IR reciever on pin 5
-    return 1;
-}
 
 
 //*  Public Module Functions with Controller versions
@@ -179,28 +148,12 @@ int MipsLab::ElbowUp(uint32_t address, uint8_t intensity) {
     sendACT(address, msg, 1);
     return 0;
 }
-int MipsLab::ControlElbowUp(std::string button, uint32_t address, uint8_t intensity) {
-    if(intensity > 9)
-        return 2;
-    const uint32_t msg = 230+intensity;
-    ControllerMessage newMsg = {getControllerAddress(button), address, msg, 1};
-    newControllerMessage(newMsg);
-    return 0;
-}
 // Increases Elbow duty cycle, on "angle" of 240 to 249; higher angle increases distance
 int MipsLab::ElbowDown(uint32_t address, uint8_t intensity) {
     if(intensity > 9)
         return 2;
     const uint32_t msg = 240+intensity;
     sendACT(address, msg, 1);
-    return 0;
-}
-int MipsLab::ControlElbowDown(std::string button, uint32_t address, uint8_t intensity) {
-    if(intensity > 9)
-        return 2;
-    const uint32_t msg = 240+intensity;
-    ControllerMessage newMsg = {getControllerAddress(button), address, msg, 1};
-    newControllerMessage(newMsg);
     return 0;
 }
 // Should go near enough
@@ -211,31 +164,5 @@ int MipsLab::ElbowTo(uint32_t address, uint8_t angle) {
     sendACT(address, msg, 1);
     return 0;
 }
-int MipsLab::ControlElbowTo(std::string button, uint32_t address, uint8_t angle) {
-    if(angle > 180)
-        return 1;
-    const uint32_t msg = angle;
-    ControllerMessage newMsg = {getControllerAddress(button), address, msg, 1};
-    newControllerMessage(newMsg);
-    return 0;
-}
 
-/* Public Controller Functions 
-int MipsLab::ControlLoop() {
-    if (IrReceiver.decode() && IrReceiver.decodedIRData.protocol != UNKNOWN) {    
-        for(const ControllerMessage &cm : controllerMessages) {
-            if(IrReceiver.decodedIRData.command == cm.controllerAddress) {
-                sendACT(cm.moduleAddress, cm.msg, cm.msgLen);
-                break;
-            }
-        }
-    }
-    IrReceiver.resume();
-
-    //if(Serial.available() > 1) {
-    //    Serial.println(Serial.read());
-    //} 
-    return 1;
-}
-*/
 #endif //MIPSLAB_CPP

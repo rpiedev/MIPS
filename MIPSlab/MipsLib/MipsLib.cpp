@@ -9,7 +9,7 @@
 #include "MipsLib.h"
 
 //*  Private Containers
-const std::string MipsLab::moduleTypes[] = {"","LED","Claw","Elbow"};
+const char *MipsLab::moduleTypes[] = {"","LED","Claw","Elbow"};
 
 //*  Private Essential
 //sends ACT packet from Hub
@@ -53,14 +53,14 @@ int MipsLab::updateModules() {
     isDoneTimer = 1;
     Serial.print("Modules connected... ");
     Serial.println(modules.size());
-    for(const MipsModule& module : modules) {
+    for (int i = 0; i < modules.size(); i++) {
         Serial.print(isDoneTimer++);
         Serial.print(": ");
-        Serial.print(moduleTypes[module.type].c_str());
+        Serial.print(moduleTypes[modules.get(i).type]);
         Serial.print(" module with address ");
-        Serial.println(module.address);
+        Serial.println(modules.get(i).address);
     }
-        
+
     // await for end of serial1 messages
     // once that is done do it again to confirm, until same result twice in a row
     // afterwards, print to serial results
@@ -68,7 +68,7 @@ int MipsLab::updateModules() {
     return 1;
 }
 
-std::string MipsLab::Error(uint16_t ecode) {
+char *MipsLab::Error(uint16_t ecode) {
     switch(ecode) {
         case 1:
             return "Servo has a maximum angle of 180 degrees";
@@ -91,6 +91,11 @@ void MipsLab::write(unsigned char in) {
     bufferWriteIndex+=1;
 }
 
+void memcpy(void *dest, const void *src) {
+    ((unsigned char *)dest)[0] = ((unsigned char *)src)[0];
+    return;
+}
+
 void MipsLab::checkBuffer() {
     uint8_t diff = bufferWriteIndex >= bufferReadIndex ? bufferWriteIndex - bufferReadIndex : bufferWriteIndex + (64 - bufferReadIndex);
     if(bufferReadIndex == bufferWriteIndex) return; // maybe enable sleep mode?
@@ -106,14 +111,14 @@ void MipsLab::checkBuffer() {
         return;
     }
     MipsModule newMod;
-    std::memcpy((char*)&newMod.address, buffer+bufferReadIndex+3, 1);
-    std::memcpy((char*)&newMod.address+1, buffer+bufferReadIndex+2, 1);
-    std::memcpy((char*)&newMod.address+2, buffer+bufferReadIndex+1, 1);
-    std::memcpy((char*)&newMod.address+3, buffer+bufferReadIndex, 1);
-    std::memcpy((char*)&newMod.type, buffer+bufferReadIndex+5, 1);
-    std::memcpy((char*)&newMod.type+1, buffer+bufferReadIndex+4, 1);
-    std::memcpy((char*)&newMod.version, buffer+bufferReadIndex+7, 1);
-    std::memcpy((char*)&newMod.version+1, buffer+bufferReadIndex+6, 1);
+    memcpy((char*)&newMod.address, buffer+bufferReadIndex+3);
+    memcpy((char*)&newMod.address+1, buffer+bufferReadIndex+2);
+    memcpy((char*)&newMod.address+2, buffer+bufferReadIndex+1);
+    memcpy((char*)&newMod.address+3, buffer+bufferReadIndex);
+    memcpy((char*)&newMod.type, buffer+bufferReadIndex+5);
+    memcpy((char*)&newMod.type+1, buffer+bufferReadIndex+4);
+    memcpy((char*)&newMod.version, buffer+bufferReadIndex+7);
+    memcpy((char*)&newMod.version+1, buffer+bufferReadIndex+6);
     bufferReadIndex += 8;
     
     modules.push_back(newMod);

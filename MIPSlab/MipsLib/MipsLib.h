@@ -6,15 +6,46 @@
 #define MIPSLIB_H
 
 #include "Arduino.h"
-#include <Arduino_AVRSTL.h>
-#include <string>
-#include <cstring>
-#include <vector>
 
 struct MipsModule {
     uint32_t address;
     uint16_t type;
     uint16_t version;
+};
+class MipsVector {
+    MipsModule *array;
+    uint16_t length;
+    uint16_t capacity;
+
+public:
+    MipsVector() {
+        array = new MipsModule[4];
+        length = 0;
+        capacity = 4;
+    }
+    ~MipsVector() { delete[] array; }
+    void push_back(MipsModule newMod) {
+        if (length >= capacity) {
+            MipsModule *newArray = new MipsModule[capacity + 4];
+            for (int i = 0; i < capacity; i++) {
+                newArray[i] = array[i];
+            }
+
+            capacity += 4;
+            delete[] array;
+            array = newArray;
+        }
+
+        array[length] = newMod;
+        length++;
+    }
+    MipsModule get(int index) {
+        if (index >= length) return;
+        return array[index];
+    }
+    uint16_t size() {
+        return length;
+    }
 };
 
 class MipsLab {
@@ -32,8 +63,8 @@ class MipsLab {
 
     private:
         //Containers
-        std::vector<MipsModule> modules;
-        static const std::string moduleTypes[];
+        MipsVector modules;
+        static const char *moduleTypes[];
 
         //Circular Buffer
         unsigned char buffer[64];
@@ -48,7 +79,7 @@ class MipsLab {
         int sendACT(uint32_t address, const uint32_t msg, uint8_t msgLen);
         int sendHUB();
         int updateModules();
-        std::string Error(uint16_t ecode);
+        char *Error(uint16_t ecode);
 
         //Constants
         const uint8_t IRPin = 5;
